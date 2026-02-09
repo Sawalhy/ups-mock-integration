@@ -45,6 +45,7 @@ The service listens on `PORT` (default `3000`).
 - **Zod validation**: runtime validation for requests and upstream responses; faster to evolve than class-validator for this exercise.
 - **In-memory auth cache**: simple and sufficient for the take-home; uses `expires_in` + safety buffer.
 - **HTTP_MODE toggle**: `stub|live` chooses stubbed or real HTTP without code changes.
+- **Error handling**: structured errors for auth, validation, rate limit, malformed response, timeouts, and upstream failures; 401/403 triggers a one-time token refresh retry.
 
 Tradeoffs:
 - **No persistence**: token cache is in-memory only; a distributed cache would be required in production.

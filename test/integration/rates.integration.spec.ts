@@ -166,9 +166,32 @@ describe("Rates integration", () => {
     });
 
     await expect(ratesService.getQuotes(sampleRateRequest)).rejects.toMatchObject({
-      code: "UPSTREAM_ERROR",
+      code: "VALIDATION_ERROR",
       status: 400,
     });
+  });
+
+  it("retries on 401 by refreshing token", async () => {
+    console.log("Scenario: auth retry on 401");
+    stubHttpClient.registerResponse(buildAuthRequest(), {
+      status: 200,
+      data: loadFixture("ups.auth.success.json"),
+    });
+    stubHttpClient.registerResponse(buildRateRequest(), {
+      status: 401,
+      data: loadFixture("ups.rate.error.401.json"),
+    });
+    stubHttpClient.registerResponse(buildAuthRequest(), {
+      status: 200,
+      data: loadFixture("ups.auth.success.json"),
+    });
+    stubHttpClient.registerResponse(buildRateRequest(), {
+      status: 200,
+      data: loadFixture("ups.rate.success.json"),
+    });
+
+    const quotes = await ratesService.getQuotes(sampleRateRequest);
+    expect(quotes).toHaveLength(1);
   });
 
   it("maps rate limit response", async () => {

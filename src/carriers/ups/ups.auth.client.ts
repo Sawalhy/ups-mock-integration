@@ -26,9 +26,9 @@ export class UpsAuthClient implements CarrierAuthProvider {
     private readonly tokenCache: TokenCache,
   ) {}
 
-  async getAccessToken(): Promise<string> {
+  async getAccessToken(forceRefresh = false): Promise<string> {
     const cached = this.tokenCache.get(this.cacheKey);
-    if (cached && Date.now() < cached.expiresAt) {
+    if (!forceRefresh && cached && Date.now() < cached.expiresAt) {
       return cached.accessToken;
     }
 

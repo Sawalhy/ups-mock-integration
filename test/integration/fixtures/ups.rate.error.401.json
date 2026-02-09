@@ -1,0 +1,10 @@
+{
+  "response": {
+    "errors": [
+      {
+        "code": "401",
+        "message": "Invalid or expired token"
+      }
+    ]
+  }
+}
