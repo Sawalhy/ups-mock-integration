@@ -1,0 +1,10 @@
+{
+  "response": {
+    "errors": [
+      {
+        "code": "50000",
+        "message": "Internal error"
+      }
+    ]
+  }
+}
