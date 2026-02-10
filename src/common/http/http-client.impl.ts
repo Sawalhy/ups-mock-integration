@@ -76,6 +76,13 @@ export class HttpClientImpl implements HttpClient {
     }
 
     const axiosError = error as AxiosError;
+    if (this.isMalformedJsonError(axiosError)) {
+      return new CarrierError("MALFORMED_RESPONSE", "HTTP response malformed JSON", {
+        details: {
+          message: axiosError.message,
+        },
+      });
+    }
     if (axiosError.code === "ECONNABORTED") {
       return new CarrierError("TIMEOUT", "HTTP request timed out");
     }
@@ -85,5 +92,12 @@ export class HttpClientImpl implements HttpClient {
         message: axiosError.message,
       },
     });
+  }
+
+  private isMalformedJsonError(error: AxiosError): boolean {
+    const name = (error as Error).name;
+    if (name === "SyntaxError") return true;
+    const message = error.message ?? "";
+    return message.includes("Unexpected token") && message.includes("JSON");
   }
 }

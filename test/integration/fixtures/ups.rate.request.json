@@ -1,0 +1,45 @@
+{
+  "RateRequest": {
+    "Request": {
+      "RequestOption": "Shop"
+    },
+    "Shipment": {
+      "Shipper": {
+        "Address": {
+          "AddressLine": ["123 Main St", "Suite 100"],
+          "City": "San Francisco",
+          "StateProvinceCode": "CA",
+          "PostalCode": "94103",
+          "CountryCode": "US"
+        }
+      },
+      "ShipTo": {
+        "Address": {
+          "AddressLine": ["456 Market St"],
+          "City": "New York",
+          "StateProvinceCode": "NY",
+          "PostalCode": "10001",
+          "CountryCode": "US"
+        }
+      },
+      "ShipFrom": {
+        "Address": {
+          "AddressLine": ["123 Main St", "Suite 100"],
+          "City": "San Francisco",
+          "StateProvinceCode": "CA",
+          "PostalCode": "94103",
+          "CountryCode": "US"
+        }
+      },
+      "Package": [
+        {
+          "PackagingType": { "Code": "02" },
+          "PackageWeight": {
+            "UnitOfMeasurement": { "Code": "LBS" },
+            "Weight": "2"
+          }
+        }
+      ]
+    }
+  }
+}

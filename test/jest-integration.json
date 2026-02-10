@@ -3,6 +3,5 @@
   "testEnvironment": "node",
   "rootDir": "..",
   "testMatch": ["<rootDir>/test/integration/**/*.spec.ts"],
-  "verbose": true,
-  "runInBand": true
+  "verbose": true
 }

@@ -20,7 +20,7 @@ const RatedShipmentSchema = z.object({
 
 const UpsRateResponseSchema = z.object({
   RateResponse: z.object({
-    RatedShipment: z.array(RatedShipmentSchema),
+    RatedShipment: z.union([z.array(RatedShipmentSchema), RatedShipmentSchema]),
   }),
 });
 
@@ -35,7 +35,11 @@ export function mapFromUpsRateResponse(
     });
   }
 
-  return parsed.data.RateResponse.RatedShipment.map((shipment) => {
+  const ratedShipments = Array.isArray(parsed.data.RateResponse.RatedShipment)
+    ? parsed.data.RateResponse.RatedShipment
+    : [parsed.data.RateResponse.RatedShipment];
+
+  return ratedShipments.map((shipment) => {
     const deliveryDaysValue = shipment.GuaranteedDelivery?.BusinessDaysInTransit;
     const deliveryDays = deliveryDaysValue
       ? Number(deliveryDaysValue)

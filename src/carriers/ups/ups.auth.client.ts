@@ -8,6 +8,7 @@ import {
 } from "../contracts/http-client.interface";
 import { CarrierError } from "../../common/errors/carrier-errors";
 import { TokenCache } from "../../common/http/token-cache.service";
+import { getRequiredString } from "../../common/config/config-utils";
 
 const TokenResponseSchema = z.object({
   access_token: z.string(),
@@ -32,9 +33,9 @@ export class UpsAuthClient implements CarrierAuthProvider {
       return cached.accessToken;
     }
 
-    const tokenUrl = this.requiredConfig("UPS_OAUTH_TOKEN_URL");
-    const clientId = this.requiredConfig("UPS_CLIENT_ID");
-    const clientSecret = this.requiredConfig("UPS_CLIENT_SECRET");
+    const tokenUrl = getRequiredString(this.configService, "UPS_OAUTH_TOKEN_URL");
+    const clientId = getRequiredString(this.configService, "UPS_CLIENT_ID");
+    const clientSecret = getRequiredString(this.configService, "UPS_CLIENT_SECRET");
 
     const response = await this.httpClient.request({
       method: "POST",
@@ -75,13 +76,4 @@ export class UpsAuthClient implements CarrierAuthProvider {
     return parsed.data.access_token;
   }
 
-  private requiredConfig(key: string): string {
-    const value = this.configService.get<string>(key);
-    if (!value) {
-      throw new CarrierError("CONFIG_ERROR", "Missing configuration", {
-        details: { key },
-      });
-    }
-    return value;
-  }
 }

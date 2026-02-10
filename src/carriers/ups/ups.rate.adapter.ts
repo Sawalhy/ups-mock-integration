@@ -4,6 +4,7 @@ import { CarrierRateProvider } from "../contracts/carrier-rate-provider.interfac
 import {
   HTTP_CLIENT,
   HttpClient,
+  HttpRequest,
 } from "../contracts/http-client.interface";
 import { RateRequest } from "../../rates/dto/rate-request.dto";
 import { RateQuote } from "../../rates/dto/rate-response.dto";
@@ -11,6 +12,7 @@ import { CarrierError } from "../../common/errors/carrier-errors";
 import { UpsAuthClient } from "./ups.auth.client";
 import { mapToUpsRateRequest } from "./mappers/ups-rate-request.mapper";
 import { mapFromUpsRateResponse } from "./mappers/ups-rate-response.mapper";
+import { getRequiredString } from "../../common/config/config-utils";
 
 @Injectable()
 export class UpsRateAdapter implements CarrierRateProvider {
@@ -23,10 +25,10 @@ export class UpsRateAdapter implements CarrierRateProvider {
   ) {}
 
   async getRates(request: RateRequest): Promise<RateQuote[]> {
-    const baseUrl = this.requiredConfig("UPS_API_BASE_URL");
+    const baseUrl = getRequiredString(this.configService, "UPS_API_BASE_URL");
     const token = await this.authClient.getAccessToken();
     const payload = mapToUpsRateRequest(request);
-    const requestPayload = {
+    const requestPayload: HttpRequest = {
       method: "POST",
       url: `${baseUrl}/rating/v1/Rate`,
       headers: {
@@ -77,8 +79,14 @@ export class UpsRateAdapter implements CarrierRateProvider {
     }
 
     if (response.status >= 400 && response.status < 500) {
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         throw new CarrierError("AUTH_ERROR", "UPS auth rejected", {
+          status: response.status,
+          details,
+        });
+      }
+      if (response.status === 403) {
+        throw new CarrierError("AUTH_ERROR", "UPS blocked merchant", {
           status: response.status,
           details,
         });
@@ -103,13 +111,4 @@ export class UpsRateAdapter implements CarrierRateProvider {
     return { response: data };
   }
 
-  private requiredConfig(key: string): string {
-    const value = this.configService.get<string>(key);
-    if (!value) {
-      throw new CarrierError("CONFIG_ERROR", "Missing configuration", {
-        details: { key },
-      });
-    }
-    return value;
-  }
 }

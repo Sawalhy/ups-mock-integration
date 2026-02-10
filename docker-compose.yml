@@ -7,7 +7,6 @@ services:
       dockerfile: docker/Dockerfile.backend
     environment:
       - PORT=3000
-      - HTTP_MODE=${HTTP_MODE:-stub}
       - UPS_API_BASE_URL=${UPS_API_BASE_URL}
       - UPS_OAUTH_TOKEN_URL=${UPS_OAUTH_TOKEN_URL}
       - UPS_CLIENT_ID=${UPS_CLIENT_ID}
@@ -20,7 +19,6 @@ services:
       context: .
       dockerfile: docker/Dockerfile.tests
     environment:
-      - HTTP_MODE=stub
       - UPS_API_BASE_URL=${UPS_API_BASE_URL}
       - UPS_OAUTH_TOKEN_URL=${UPS_OAUTH_TOKEN_URL}
       - UPS_CLIENT_ID=${UPS_CLIENT_ID}

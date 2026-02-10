@@ -2,8 +2,8 @@ import {
   HttpClient,
   HttpRequest,
   HttpResponse,
-} from "../../carriers/contracts/http-client.interface";
-import { CarrierError } from "../errors/carrier-errors";
+} from "../../src/carriers/contracts/http-client.interface";
+import { CarrierError } from "../../src/common/errors/carrier-errors";
 
 type StubResponse = HttpResponse | Error;
 

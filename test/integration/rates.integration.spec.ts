@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import axios from "axios";
 import { RatesService } from "../../src/rates/rates.service";
+import { RateRequest } from "../../src/rates/dto/rate-request.dto";
 import { RatesModule } from "../../src/rates/rates.module";
 import { CarriersModule } from "../../src/carriers/carriers.module";
 import {
@@ -11,7 +12,7 @@ import {
   HttpRequest,
   HttpResponse,
 } from "../../src/carriers/contracts/http-client.interface";
-import { StubHttpClient } from "../../src/common/http/http-client.stub";
+import { StubHttpClient } from "../support/stub-http-client";
 import { mapToUpsRateRequest } from "../../src/carriers/ups/mappers/ups-rate-request.mapper";
 import { CarrierError } from "../../src/common/errors/carrier-errors";
 import { HttpClientImpl } from "../../src/common/http/http-client.impl";
@@ -50,9 +51,22 @@ const buildRateRequest = (): HttpRequest => ({
   timeoutMs: 15_000,
 });
 
-const sampleRateRequest = {
-  origin: { postalCode: "94103", countryCode: "US" },
-  destination: { postalCode: "10001", countryCode: "US" },
+const sampleRateRequest: RateRequest = {
+  origin: {
+    postalCode: "94103",
+    countryCode: "US",
+    city: "San Francisco",
+    state: "CA",
+    addressLine1: "123 Main St",
+    addressLine2: "Suite 100",
+  },
+  destination: {
+    postalCode: "10001",
+    countryCode: "US",
+    city: "New York",
+    state: "NY",
+    addressLine1: "456 Market St",
+  },
   packages: [
     {
       weight: { value: 2, unit: "LB" },
@@ -88,6 +102,9 @@ describe("Rates integration", () => {
 
   it("builds request and parses success response", async () => {
     console.log("Scenario: success response mapping");
+    expect(mapToUpsRateRequest(sampleRateRequest)).toEqual(
+      loadFixture("ups.rate.request.json"),
+    );
     stubHttpClient.registerResponse(buildAuthRequest(), {
       status: 200,
       data: loadFixture("ups.auth.success.json"),
@@ -171,6 +188,31 @@ describe("Rates integration", () => {
     });
   });
 
+  it("maps blocked merchant response", async () => {
+    console.log("Scenario: upstream 403 error");
+    stubHttpClient.registerResponse(buildAuthRequest(), {
+      status: 200,
+      data: loadFixture("ups.auth.success.json"),
+    });
+    stubHttpClient.registerResponse(buildRateRequest(), {
+      status: 403,
+      data: loadFixture("ups.rate.error.401.json"),
+    });
+    stubHttpClient.registerResponse(buildAuthRequest(), {
+      status: 200,
+      data: loadFixture("ups.auth.success.json"),
+    });
+    stubHttpClient.registerResponse(buildRateRequest(), {
+      status: 403,
+      data: loadFixture("ups.rate.error.401.json"),
+    });
+
+    await expect(ratesService.getQuotes(sampleRateRequest)).rejects.toMatchObject({
+      code: "AUTH_ERROR",
+      status: 403,
+    });
+  });
+
   it("retries on 401 by refreshing token", async () => {
     console.log("Scenario: auth retry on 401");
     stubHttpClient.registerResponse(buildAuthRequest(), {
@@ -208,6 +250,23 @@ describe("Rates integration", () => {
     await expect(ratesService.getQuotes(sampleRateRequest)).rejects.toMatchObject({
       code: "RATE_LIMIT",
       status: 429,
+    });
+  });
+
+  it("maps upstream server error response", async () => {
+    console.log("Scenario: upstream 500 error");
+    stubHttpClient.registerResponse(buildAuthRequest(), {
+      status: 200,
+      data: loadFixture("ups.auth.success.json"),
+    });
+    stubHttpClient.registerResponse(buildRateRequest(), {
+      status: 500,
+      data: loadFixture("ups.rate.error.500.json"),
+    });
+
+    await expect(ratesService.getQuotes(sampleRateRequest)).rejects.toMatchObject({
+      code: "UPSTREAM_ERROR",
+      status: 500,
     });
   });
 
@@ -275,9 +334,27 @@ describe("HttpClientImpl retry behavior", () => {
     const timeoutError = new Error("timeout") as Error & { code?: string };
     timeoutError.code = "ECONNABORTED";
     mockedAxios.request.mockRejectedValueOnce(timeoutError);
+    mockedAxios.request.mockRejectedValueOnce(timeoutError);
 
     await expect(client.request(request)).rejects.toMatchObject({
       code: "TIMEOUT",
+    });
+  });
+
+  it("maps malformed JSON response errors", async () => {
+    console.log("Scenario: HTTP malformed JSON");
+    const client = new HttpClientImpl({ maxRetries: 0, baseDelayMs: 1 });
+    const request: HttpRequest = {
+      method: "GET",
+      url: "https://example.com",
+    };
+
+    mockedAxios.request.mockRejectedValueOnce(
+      new SyntaxError("Unexpected token < in JSON at position 0"),
+    );
+
+    await expect(client.request(request)).rejects.toMatchObject({
+      code: "MALFORMED_RESPONSE",
     });
   });
 });
