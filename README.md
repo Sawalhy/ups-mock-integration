@@ -25,6 +25,18 @@ The service listens on `PORT` (default `3000`).
   - `npm run test:integration`
 - Integration fixtures are based on the UPS Rating OpenAPI spec (`Rating.yaml`) and cover
   only the fields the service generates/consumes to keep validation minimal and focused.
+- Scenarios covered in integration tests:
+  - Builds UPS request payload from domain models.
+  - Parses successful response into normalized quotes.
+  - Token acquisition, reuse, and refresh on expiry.
+  - Upstream error mapping (400/401/403/429/5xx).
+  - Malformed response handling.
+  - Missing configuration handling.
+  - HTTP retry, timeout, and malformed JSON behavior.
+- Zod-backed validation exercised by tests:
+  - Incoming request shape/required fields for `/rates/quote`.
+  - UPS request payload schema before outbound calls.
+  - UPS response schema before normalization.
 
 ## API
 
